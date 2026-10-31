@@ -1,0 +1,54 @@
+name: Lab 3 - Matrix, Artifacts, Cache
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        py: ['3.11', '3.12']
+        exclude:
+          - os: windows-latest
+            py: '3.11'
+    outputs:
+      note: ${{ steps.n.outputs.note }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - id: n
+        shell: bash
+        run: echo "note=built" >> "$GITHUB_OUTPUT"
+      - shell: bash
+        run: |
+          mkdir -p out
+          python --version > out/version-${{ matrix.os }}-${{ matrix.py }}.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: out-${{ matrix.os }}-${{ matrix.py }}
+          path: out/
+          retention-days: 3
+
+  collect:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: out-*
+          merge-multiple: true
+          path: all
+      - run: |
+          echo "build result: ${{ needs.build.result }}, note: ${{ needs.build.outputs.note }}"
+          ls -R all
