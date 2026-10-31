@@ -1,0 +1,28 @@
+name: Lab 1 - Hello Actions
+run-name: Lab 1 by ${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      who:
+        description: Who to greet
+        type: string
+        default: World
+
+permissions:
+  contents: read
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Greet
+        run: echo "Hello, ${{ inputs.who }}"
+      - name: Persist an env var for later steps
+        run: echo "STAMP=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
+      - name: Use it and write a summary
+        run: |
+          echo "Stamp is $STAMP"
+          echo "### Lab 1 done at $STAMP" >> "$GITHUB_STEP_SUMMARY"
