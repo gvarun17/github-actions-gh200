@@ -1,0 +1,48 @@
+name: Lab 2 - Contexts and Secrets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  LEVEL: workflow
+
+jobs:
+  contexts:
+    runs-on: ubuntu-latest
+    env:
+      LEVEL: job
+    steps:
+      - name: Show precedence (step env wins)
+        env:
+          LEVEL: step
+        run: echo "LEVEL=$LEVEL"
+      - name: Dump selected contexts safely
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "event=$EVENT ref=$REF actor=$ACTOR"
+          echo "runner os=${{ runner.os }} arch=${{ runner.arch }}"
+      - name: Secret check (create a repo secret DEMO first)
+        env:
+          DEMO: ${{ secrets.DEMO }}
+        run: |
+          if [ -n "$DEMO" ]; then echo "DEMO secret is set (value masked)"; else echo "DEMO not set"; fi
+      - id: gen
+        run: echo "token=abc-$RANDOM" >> "$GITHUB_OUTPUT"
+      - name: Mask a derived value
+        run: |
+          echo "::add-mask::${{ steps.gen.outputs.token }}"
+          echo "Generated ${{ steps.gen.outputs.token }}"
+      - name: Failing step that does not stop the job
+        id: flaky
+        continue-on-error: true
+        run: exit 1
+      - name: Outcome vs conclusion
+        run: |
+          echo "outcome=${{ steps.flaky.outcome }}"
+          echo "conclusion=${{ steps.flaky.conclusion }}"
