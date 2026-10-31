@@ -1,0 +1,21 @@
+name: Greet (composite)
+description: Example composite action for Day 5
+inputs:
+  who:
+    description: Who to greet
+    required: true
+    default: World
+outputs:
+  time:
+    description: UTC time of the greeting
+    value: ${{ steps.t.outputs.time }}
+runs:
+  using: composite
+  steps:
+    - id: t
+      shell: bash
+      run: echo "time=$(date -u +%FT%TZ)" >> "$GITHUB_OUTPUT"
+    - shell: bash
+      env:
+        WHO: ${{ inputs.who }}
+      run: echo "Hello, $WHO"

@@ -1,0 +1,25 @@
+name: Reusable - Greet
+
+on:
+  workflow_call:
+    inputs:
+      who:
+        type: string
+        required: true
+    outputs:
+      message:
+        value: ${{ jobs.greet.outputs.message }}
+
+permissions:
+  contents: read
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    outputs:
+      message: ${{ steps.m.outputs.message }}
+    steps:
+      - id: m
+        env:
+          WHO: ${{ inputs.who }}
+        run: echo "message=Hello, $WHO" >> "$GITHUB_OUTPUT"

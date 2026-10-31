@@ -1,0 +1,33 @@
+name: Lab 4 - Reusable Workflow Caller
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab4-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-greet:
+    uses: ./.github/workflows/reusable-greet.yml
+    with:
+      who: GH-200 student
+
+  use-result:
+    needs: call-greet
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ needs.call-greet.outputs.message }}"
+
+  local-composite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./actions/greet-composite
+        id: g
+        with:
+          who: composite caller
+      - run: echo "Time from composite ${{ steps.g.outputs.time }}"
