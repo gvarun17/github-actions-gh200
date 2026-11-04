@@ -10,8 +10,8 @@
 6. Starter workflows live in an org's `.github` repo under `workflow-templates/` with a `.properties.json` metadata file.
 7. Environments provide required reviewers (up to 6), wait timers, deployment branch/tag rules, and environment-scoped secrets/variables released only after approval.
 8. `concurrency.group` allows one running + one pending run; a newer pending run replaces the older one. `cancel-in-progress: true` cancels the running one (good for PR CI); `false` serializes (good for deploys).
-9. Run management: re-run all/failed/single job (optionally with debug logging), cancel (`cancelled()` steps still run, `always()`... see docs), `$GITHUB_STEP_SUMMARY`, annotations, badges; logs kept 90 days by default.
-10. Debugging: `ACTIONS_STEP_DEBUG=true` (step debug) and `ACTIONS_RUNNER_DEBUG=true` (runner diagnostics); `::debug::` shows only with debug on. `uses:` pinning: tag < branch risk-wise; full commit SHA is immutable and recommended.
+9. Run management: re-run all/failed/single job (optionally with debug logging), cancel runs (use `if: cancelled()` for cleanup steps), `$GITHUB_STEP_SUMMARY`, annotations, badges; logs kept 90 days by default.
+10. Debugging: `ACTIONS_STEP_DEBUG=true` (step debug) and `ACTIONS_RUNNER_DEBUG=true` (runner diagnostics); `::debug::` shows only with debug on. `uses:` pinning: tags are mutable, branches least safe; a full commit SHA is immutable and recommended.
 
 ## Practice questions (new)
 
