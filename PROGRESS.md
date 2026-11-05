@@ -6,6 +6,6 @@
 | 2 | Contexts, expressions, variables, secrets | recap posted | |
 | 3 | Jobs, matrix, artifacts, cache | recap posted | |
 | 4 | Reuse, environments, concurrency, debugging | recap posted | |
-| 5 | Authoring custom actions | | |
+| 5 | Authoring custom actions | recap posted | |
 | 6 | Enterprise, runners, security, OIDC | | |
 | 7 | Review and practice exam | | |
