@@ -8,4 +8,4 @@
 | 4 | Reuse, environments, concurrency, debugging | recap posted | |
 | 5 | Authoring custom actions | recap posted | |
 | 6 | Enterprise, runners, security, OIDC | recap posted | |
-| 7 | Review and practice exam | | |
+| 7 | Review and practice exam | recap posted | |
