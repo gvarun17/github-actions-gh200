@@ -12,6 +12,8 @@ Goal: pass GH-200 in one week, ~2–3 hours per day, with a runnable lab each da
 | 6 | Enterprise: runners, policies, security, OIDC | [day-6](lessons/day-6-enterprise-runners-security.md) | [lab-6](.github/workflows/lab-6-oidc-permissions.yml) |
 | 7 | Review, practice exam, cheat sheet | [day-7](lessons/day-7-review-and-practice.md) | — |
 
+Prefer working from your Mac? See [LOCAL-SETUP.md](LOCAL-SETUP.md) for Homebrew, `gh`, `act`, and per-day local lab steps.
+
 ## Exam facts (verify on the official page)
 
 - GH-200, Pearson VUE via Microsoft Learn, passing score 700, about $99 USD, around 100–120 minutes.
