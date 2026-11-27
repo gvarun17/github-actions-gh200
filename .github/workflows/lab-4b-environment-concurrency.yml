@@ -1,0 +1,67 @@
+name: Lab 4b - Environment Gate and Concurrency Queue
+
+# Setup (once): Settings -> Environments -> New environment "lab-prod"
+#   - Required reviewers: yourself
+#   - Deployment branches: main only
+#   - Environment variable APP_URL = https://example.com
+# Then trigger this workflow 3 times quickly and watch the queue.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-lab-prod
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      release: ${{ steps.r.outputs.release }}
+    steps:
+      - id: r
+        run: echo "release=r${{ github.run_number }}.${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: lab-prod
+      url: ${{ vars.APP_URL }}
+    steps:
+      - name: Deploy (simulated)
+        env:
+          RELEASE: ${{ needs.plan.outputs.release }}
+        run: |
+          echo "Deploying $RELEASE to lab-prod"
+          sleep 30
+          echo "### Deployed $RELEASE" >> "$GITHUB_STEP_SUMMARY"
+      - name: Debug-only line
+        run: echo "::debug::runner.debug=${{ runner.debug }} (visible only with debug logging)"
+
+  cleanup:
+    needs: deploy
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "deploy result = ${{ needs.deploy.result }}"
+
+  always-demo:
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Runs even after cancel
+        if: cancelled()
+        run: echo "always() job, and the run was cancelled"
+      - name: Also runs after cancel
+        if: always()
+        run: echo "This job runs even if you cancel the run."

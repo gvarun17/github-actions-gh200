@@ -1,0 +1,69 @@
+name: Lab 5 - Custom Actions (composite, JavaScript, Docker)
+
+on:
+  workflow_dispatch:
+    inputs:
+      who:
+        type: string
+        default: GH-200 student
+
+permissions:
+  contents: read
+
+jobs:
+  all-types-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: composite
+        uses: ./actions/greet-composite
+        with:
+          who: ${{ inputs.who }}
+
+      - id: js
+        uses: ./actions/greet-js
+        with:
+          who: ${{ inputs.who }}
+          shout: 'true'
+
+      - id: docker
+        uses: ./actions/greet-docker
+        with:
+          who: ${{ inputs.who }}
+
+      - name: Compare outputs
+        env:
+          C_TIME: ${{ steps.composite.outputs.time }}
+          J_TIME: ${{ steps.js.outputs.time }}
+          J_GREETING: ${{ steps.js.outputs.greeting }}
+          D_TIME: ${{ steps.docker.outputs.time }}
+        run: |
+          echo "composite time: $C_TIME"
+          echo "javascript    : $J_GREETING at $J_TIME"
+          echo "docker time   : $D_TIME"
+      # The JavaScript action's post step (dist/post.js) runs at the end of this job.
+
+  js-on-every-os:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./actions/greet-js
+        with:
+          who: ${{ runner.os }}
+
+  docker-on-windows-fails:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    continue-on-error: true      # expected failure: Docker actions are Linux-only
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./actions/greet-docker
+        with:
+          who: windows

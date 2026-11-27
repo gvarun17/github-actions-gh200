@@ -101,15 +101,14 @@ act workflow_dispatch -W .github/workflows/lab-4-reusable-caller.yml
 Extra tools for the exercises in `actions/README.md`:
 
 ```bash
-brew install node                      # Node 20+ for the JavaScript action
+brew install node                      # Node 24 to match the runner (action uses node24)
 cd actions/greet-js
-npm init -y
-npm install @actions/core
-npm install -D @vercel/ncc
-npx ncc build index.js -o dist         # bundle; point action.yml main at dist/index.js
+npm install                            # installs @actions/core and @vercel/ncc from package.json
+npm run build                          # bundles src/ into dist/index.js and dist/post.js
+npm test                               # runs the bundled action with fake GITHUB_* files
 ```
 
-- Docker action (Exercise B): Docker Desktop must be running; test the image on its own first with `docker build -t greet-docker actions/greet-docker && docker run --rm greet-docker`.
+- Docker action (Exercise B): Docker Desktop must be running; test the image on its own first with `docker build -t greet-docker actions/greet-docker && docker run --rm -e GITHUB_OUTPUT=/dev/stdout -e GITHUB_STEP_SUMMARY=/dev/null greet-docker Varun`.
 - Test a local action through a workflow that does `actions/checkout` then `uses: ./actions/<name>`, and run it with `act`.
 - Docker container actions only run on Linux runners. To see the failure the lab asks about, run the workflow on GitHub with `windows-latest`; `act` cannot reproduce it.
 - Tagging practice: `git tag v1.0.0 && git tag -f v1 && git push origin v1.0.0 && git push -f origin v1` (moving the `v1` tag is the one case where force-pushing a tag is expected).

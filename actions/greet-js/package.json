@@ -1,0 +1,16 @@
+{
+  "name": "greet-js",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Example JavaScript action for GH-200 Day 5",
+  "scripts": {
+    "build": "ncc build src/index.js -o dist/main --license licenses.txt && ncc build src/post.js -o dist/post-build && node -e \"const fs=require('fs');fs.copyFileSync('dist/main/index.js','dist/index.js');fs.copyFileSync('dist/post-build/index.js','dist/post.js');fs.rmSync('dist/main',{recursive:true});fs.rmSync('dist/post-build',{recursive:true});\"",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3"
+  }
+}

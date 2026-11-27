@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Say hi
         run: echo "Hello"
         env:
@@ -223,7 +223,7 @@ jobs:
       PYTHONUNBUFFERED: "1"
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - &install
         name: Install deps
         run: pip install -r requirements.txt
@@ -231,7 +231,7 @@ jobs:
     runs-on: ubuntu-latest
     env: *py_env
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - *install
 ```
 
