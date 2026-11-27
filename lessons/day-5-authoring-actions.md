@@ -14,7 +14,7 @@ flowchart TB
     S["Step: uses: owner/repo@ref"] --> D[Runner downloads the action<br/>at the ref]
     D --> M[Read action.yml]
     M --> T{runs.using}
-    T -->|node24| JS[Run pre, then main with the<br/>runner's Node 24; run post at job end]
+    T -->|node24| JS[Run pre, then main with the<br/>runner's Node 24, then post at job end]
     T -->|docker| DK{image}
     DK -->|Dockerfile| B[docker build at job start]
     DK -->|docker://image| P[docker pull]

@@ -19,7 +19,7 @@ flowchart LR
     end
     build -->|artifacts: dist-*| test[integration-test<br/>services: postgres]
     test --> deploy[deploy<br/>environment: prod]
-    build -.->|if: always()| report[report<br/>download all artifacts]
+    build -.->|"if: always()"| report[report<br/>download all artifacts]
 ```
 
 ## Job dependencies
