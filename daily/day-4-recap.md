@@ -5,12 +5,12 @@
 1. Reusable workflows use `on: workflow_call` with typed `inputs`, `secrets`, and `outputs`; they are called with `uses:` at the **job** level, never as a step.
 2. A calling job cannot also define `runs-on` or `steps`; pass data with `with:` and secrets with `secrets:` (explicit map) or `secrets: inherit`.
 3. Reference reusable workflows as `./.github/workflows/x.yml` (same repo) or `org/repo/.github/workflows/x.yml@ref`; a full SHA is safest. The caller's `env` is not passed.
-4. The called workflow's `GITHUB_TOKEN` permissions can only be downgraded by the caller, never elevated. Nesting is limited to 4 levels; matrix works on reusable calls.
+4. The called workflow's `GITHUB_TOKEN` permissions can only be downgraded by the caller, never elevated. Nesting is limited to 10 levels and 50 reusable workflows on github.com (4 and 20 on GHES); matrix works on reusable calls.
 5. Reusable workflow = whole jobs with its own runner; composite action = steps inside the caller's job on the caller's runner (defined in `action.yml`).
 6. Starter workflows live in an org's `.github` repo under `workflow-templates/` with a `.properties.json` metadata file.
 7. Environments provide required reviewers (up to 6), wait timers, deployment branch/tag rules, and environment-scoped secrets/variables released only after approval.
-8. `concurrency.group` allows one running + one pending run; a newer pending run replaces the older one. `cancel-in-progress: true` cancels the running one (good for PR CI); `false` serializes (good for deploys).
-9. Run management: re-run all/failed/single job (optionally with debug logging), cancel runs (use `if: cancelled()` for cleanup steps), `$GITHUB_STEP_SUMMARY`, annotations, badges; logs kept 90 days by default.
+8. `concurrency.group` allows one running + one pending run; a newer pending run replaces the older one. `cancel-in-progress: true` cancels the running one (good for PR CI); `false` serializes (good for deploys); add `queue: max` to keep up to 100 waiting runs instead of one.
+9. Run management: re-run all/failed/single job (optionally with debug logging), cancel runs (`always()` and `cancelled()` steps still run after a cancel; `!cancelled()` steps do not), `$GITHUB_STEP_SUMMARY`, annotations, badges; logs kept 90 days by default.
 10. Debugging: `ACTIONS_STEP_DEBUG=true` (step debug) and `ACTIONS_RUNNER_DEBUG=true` (runner diagnostics); `::debug::` shows only with debug on. `uses:` pinning: tags are mutable, branches least safe; a full commit SHA is immutable and recommended.
 
 ## Practice questions (new)
@@ -22,7 +22,7 @@
 **A2.** `contents: read`. The caller can only keep or reduce the token permissions passed to the called workflow, not elevate them.
 
 **Q3.** Two pushes to `main` trigger a deploy workflow with `concurrency: {group: deploy, cancel-in-progress: false}`, and a third push arrives while the first is still running and the second is pending. What happens to the second run?
-**A3.** The second (pending) run is cancelled and replaced by the third. At most one run is running and one pending per group; the first run continues untouched.
+**A3.** The second (pending) run is cancelled and replaced by the third. At most one run is running and one pending per group; the first run continues untouched. With `queue: max`, the second run would wait instead.
 
 **Q4.** A job references `environment: production` that has two required reviewers and a secret `DB_PASS` scoped to that environment. When can the job read `DB_PASS`?
 **A4.** Only after the required reviewer approval is granted (and the branch passes any deployment-branch rule). Until then the job waits and the environment secret is not available.

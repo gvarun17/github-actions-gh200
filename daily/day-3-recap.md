@@ -8,9 +8,9 @@
 4. Matrix: `include` adds combos or keys, `exclude` removes combos (applied before include); max 256 jobs per matrix; `fail-fast` defaults to true; `max-parallel` caps concurrency.
 5. Dynamic matrix: an earlier job outputs JSON, consumed with `fromJSON(needs.<job>.outputs.<name>)`.
 6. Job-level `if:` is evaluated before a runner starts (no `steps` context, no secrets); `continue-on-error` lets a job/step fail without failing the run; job `timeout-minutes` defaults to 360.
-7. Artifacts (`upload-artifact@v4` / `download-artifact@v4`) deliver files from a run; v4 names must be unique per run; default retention 90 days.
-8. Cache (`actions/cache@v4`): exact `key` match = hit; `restore-keys` give fallback prefix matches; `cache-hit` output is true only for exact match.
-9. Cache scope: current branch, base branch, default branch (not sibling branches); 10 GB per repo; unused entries evicted after 7 days.
+7. Artifacts (`upload-artifact@v7` / `download-artifact@v8`) deliver files from a run; names must be unique per run; default retention 90 days (max 90 public, 400 private).
+8. Cache (`actions/cache@v5`): exact `key` match = hit; `restore-keys` give fallback prefix matches; `cache-hit` output is true only for exact match.
+9. Cache scope: current branch, base branch, default branch (not sibling branches); 10 GB included per repo (admins can raise it, billed above 10 GB); unused entries evicted after 7 days.
 10. Containers: `container:` runs steps inside an image, `services:` attach Docker sidecars; reach a service by label hostname from a container job, or `localhost` + mapped port on the runner; Linux runners only.
 
 ## Practice questions (new)

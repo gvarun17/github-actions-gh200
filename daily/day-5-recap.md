@@ -4,7 +4,7 @@
 
 1. There are three action types: JavaScript (runs directly on the runner, cross-platform), Docker container (Linux runners only), and composite (steps run on the caller's runner, any OS).
 2. An action is defined by `action.yml` or `action.yaml` at the action's root, with `name`, `description`, `inputs`, `outputs`, `runs`, and optional `branding`.
-3. JavaScript actions set `runs.using` to `node20` (or newer) with `main`, and optional `pre`/`post` plus `pre-if`/`post-if` for setup and cleanup.
+3. JavaScript actions set `runs.using` to `node24` (Node 20 was removed from runners in Sep 2026) with `main`, and optional `pre`/`post` plus `pre-if`/`post-if` for setup and cleanup.
 4. JS actions use the Actions Toolkit (`@actions/core`, `@actions/github`, `@actions/exec`, ...): `core.getInput`, `core.setOutput`, `core.setFailed`. Inputs arrive as `INPUT_<NAME>` environment variables.
 5. Ship JS dependencies by committing `node_modules` or bundling into `dist/` with `@vercel/ncc`.
 6. Docker actions use `runs.using: docker` with `image` (a `Dockerfile` or `docker://...`), `args`, `entrypoint`, and `env`. The workspace mounts at `/github/workspace`; a prebuilt image starts faster.
@@ -33,4 +33,4 @@
 ## Hands-on task for today
 
 Work through the Day 5 lab in [`actions/README.md`](../actions/README.md). The existing composite action [`actions/greet-composite/action.yml`](../actions/greet-composite/action.yml) is called by [`lab-4-reusable-caller.yml`](../.github/workflows/lab-4-reusable-caller.yml), so run that workflow first to see a custom action in use.
-Then build `actions/greet-js/` (`node20`, bundled with `ncc`) and `actions/greet-docker/`, call each with `uses: ./actions/<name>` after `actions/checkout`, confirm the Docker action fails on a Windows runner, and tag `v1.0.0` plus a moving `v1`.
+Then rebuild `actions/greet-js/` (`node24`, bundled with `ncc`) and test `actions/greet-docker/` (both exist now; run Lab 5), call each with `uses: ./actions/<name>` after `actions/checkout`, confirm the Docker action fails on a Windows runner, and tag `v1.0.0` plus a moving `v1`.

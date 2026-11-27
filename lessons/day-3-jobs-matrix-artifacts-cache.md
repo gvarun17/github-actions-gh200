@@ -1,7 +1,7 @@
 # Day 3 — Jobs: Dependencies, Matrix, Outputs, Artifacts, Caching, Containers
 
 > Exam domains: **Author and manage workflows (20–25%)**, **Consume and troubleshoot workflows (15–20%)** (matrix analysis, artifacts), **Secure and optimize automation (10–15%)** (cache and retention).
-> Practice issues: [`label:topic:day-3`](../../issues?q=is%3Aissue+label%3Atopic%3Aday-3)
+> Practice issues: [`label:topic:day-3`](https://github.com/gvarun17/github-actions-gh200/issues?q=is%3Aissue+label%3Atopic%3Aday-3)
 
 ## Overview
 

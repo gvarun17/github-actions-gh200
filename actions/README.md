@@ -29,4 +29,4 @@ Three working actions. [Lab 5](../.github/workflows/lab-5-custom-actions.yml) ca
 4. **Call** each action from a workflow with `uses: ./actions/<name>` after `actions/checkout`.
 5. **Version** a release: `v1.0.0` (immutable release) plus a moving `v1` plain tag.
 
-Practice issues for this lab: [`label:topic:day-5`](../../../issues?q=is%3Aissue+label%3Atopic%3Aday-5).
+Practice issues for this lab: [`label:topic:day-5`](https://github.com/gvarun17/github-actions-gh200/issues?q=is%3Aissue+label%3Atopic%3Aday-5).

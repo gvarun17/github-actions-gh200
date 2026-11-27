@@ -1,7 +1,7 @@
 # Day 4 — Reuse, Environments, Concurrency, and Debugging
 
 > Exam domains: **Consume and troubleshoot workflows (15–20%)**, **Author and manage workflows (20–25%)** (reusable workflow inputs/secrets, environment protections), **Secure and optimize automation (10–15%)** (approval gates).
-> Practice issues: [`label:topic:day-4`](../../issues?q=is%3Aissue+label%3Atopic%3Aday-4)
+> Practice issues: [`label:topic:day-4`](https://github.com/gvarun17/github-actions-gh200/issues?q=is%3Aissue+label%3Atopic%3Aday-4)
 
 ## Overview
 

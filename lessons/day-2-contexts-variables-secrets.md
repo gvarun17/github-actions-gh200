@@ -1,7 +1,7 @@
 # Day 2 — Contexts, Expressions, Variables, and Secrets
 
 > Exam domains: **Author and manage workflows (20–25%)**, **Manage GitHub Actions for the enterprise (20–25%)** (secrets and variables), **Secure and optimize automation (10–15%)** (script injection, `GITHUB_TOKEN`).
-> Practice issues: [`label:topic:day-2`](../../issues?q=is%3Aissue+label%3Atopic%3Aday-2)
+> Practice issues: [`label:topic:day-2`](https://github.com/gvarun17/github-actions-gh200/issues?q=is%3Aissue+label%3Atopic%3Aday-2)
 
 ## Overview
 

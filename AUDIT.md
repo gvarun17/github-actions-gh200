@@ -9,10 +9,10 @@ Reference: GH-200 study guide, skills measured as of **January 2026** (Microsoft
 |---|---|---|
 | Lessons | 7 | 7 (deepened) |
 | Exam domains covered | 4 (old outline) | 5 (January 2026 outline) |
-| Runnable labs | 5 workflows + 1 reusable + 1 composite action | 8 workflows + 1 reusable + 2 actions |
+| Runnable labs | 5 workflows + 1 reusable + 1 composite action | 11 workflows + 1 reusable + 3 actions (composite, JS, Docker) |
 | Mermaid diagrams | 0 | 1+ per lesson |
 | Troubleshooting tables | 0 | 1 per lesson |
-| Practice issues | 0 | See [practice-issues.yaml](practice-issues.yaml) |
+| Practice issues | 0 | 28 (see [practice-issues.yaml](practice-issues.yaml)) |
 | Factual errors found | — | 9 (see section 3) |
 | Outdated items found | — | 8 (see section 4) |
 
@@ -50,18 +50,28 @@ Reference: GH-200 study guide, skills measured as of **January 2026** (Microsoft
 | # | Item | Old | New |
 |---|---|---|---|
 | 1 | JavaScript action runtime | `using: node20` | `using: node24` (Node 20 removed from runners on 2026-09-23) |
-| 2 | `actions/checkout` | `@v4` | `@v6` |
+| 2 | `actions/checkout` | `@v4` | `@v7` (v7, Jun 2026, refuses fork PR head checkout in `pull_request_target` by default) |
 | 3 | `actions/setup-python` | `@v5` | `@v6` |
 | 4 | `actions/upload-artifact` / `download-artifact` | `@v4` / `@v4` | `@v7` / `@v8` |
 | 5 | `actions/cache` | `@v4` | `@v5` |
 | 6 | `workflow_dispatch` inputs | limit not stated | up to 25 inputs |
 | 7 | Exam outline | not in course | YAML anchors, immutable actions, lockfiles, editor tooling, REST retention APIs, runner images |
+| 9 | `pull_request_target` | "dangerous" only | Blocked by default in public repos from 2026-12-02 unless an Actions event policy allows it |
+| 10 | Concurrency | 1 running + 1 pending only | `queue: max` (May 2026) |
+| 11 | Supply chain | SHA pin advice | Require SHA pinning policy (Aug 2025), immutable releases (Oct 2025), lockfiles (Oct 2026) |
 | 8 | Included usage | minutes only | Docs now show included compute as a dollar allowance on the limits page; minute table still in billing docs — verify before exam |
 
-## 5. Items not verified
+## 5. Study-guide vs docs conflict
+
+The January 2026 study guide lists "YAML anchors and aliases (`&`, `*`, and merge `<<`)". GitHub's implementation supports anchors and aliases but **not** merge keys (YAML 1.2). The course teaches the docs behaviour and flags it as a likely exam distractor.
+
+## 6. Items not verified
 
 | Item | Reason |
 |---|---|
 | Exact exam price in INR | Price depends on the country. Check the Microsoft Learn exam page before you book. |
 | Latest patch tags and commit SHAs of `actions/*` | This session could not query those repos. Examples use major tags. Practice issue "Pin every action to a SHA" asks you to resolve them. |
 | Self-hosted runner platform charge final date | Postponed; no new date published at audit time. |
+| Latest majors of `actions/attest-build-provenance` (v3) and `aws-actions/configure-aws-credentials` (v5) | Could not query the repos; confirm on their release pages. |
+| `examples/day-6/terraform-oidc/main.tf` | `terraform validate` not run (Terraform binary not available in the build session). Run `terraform init -backend=false && terraform validate`. |
+| Docker action image build | Docker daemon not available in the build session; `entrypoint.sh` was tested directly with `sh`. Lab 5 builds it on GitHub. |

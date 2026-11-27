@@ -1,7 +1,7 @@
 # Day 5 — Authoring Custom Actions
 
 > Exam domain: **Author and maintain actions (15–20%)**. Also **Secure and optimize automation** (immutable actions, pinning).
-> Practice issues: [`label:topic:day-5`](../../issues?q=is%3Aissue+label%3Atopic%3Aday-5)
+> Practice issues: [`label:topic:day-5`](https://github.com/gvarun17/github-actions-gh200/issues?q=is%3Aissue+label%3Atopic%3Aday-5)
 
 ## Overview
 

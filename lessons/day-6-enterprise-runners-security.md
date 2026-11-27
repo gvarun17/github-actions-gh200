@@ -1,7 +1,7 @@
 # Day 6 — Enterprise: Runners, Policies, Security, OIDC
 
 > Exam domains: **Manage GitHub Actions for the enterprise (20–25%)** and **Secure and optimize automation (10–15%)**.
-> Practice issues: [`label:topic:day-6`](../../issues?q=is%3Aissue+label%3Atopic%3Aday-6)
+> Practice issues: [`label:topic:day-6`](https://github.com/gvarun17/github-actions-gh200/issues?q=is%3Aissue+label%3Atopic%3Aday-6)
 
 ## Overview
 

@@ -1,7 +1,7 @@
 # Day 1 — Fundamentals, Workflow Syntax, and Triggers
 
 > Exam domain: **Author and manage workflows (20–25%)** and **Consume and troubleshoot workflows (15–20%)**.
-> Practice issues: [`label:topic:day-1`](../../issues?q=is%3Aissue+label%3Atopic%3Aday-1)
+> Practice issues: [`label:topic:day-1`](https://github.com/gvarun17/github-actions-gh200/issues?q=is%3Aissue+label%3Atopic%3Aday-1)
 
 ## Overview
 
