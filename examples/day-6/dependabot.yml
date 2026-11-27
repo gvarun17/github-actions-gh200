@@ -1,0 +1,14 @@
+# Copy to .github/dependabot.yml to get weekly PRs that bump pinned actions.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /                 # also scans .github/workflows and local actions
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /actions/greet-js
+    schedule:
+      interval: weekly

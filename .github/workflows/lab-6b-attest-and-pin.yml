@@ -1,0 +1,57 @@
+name: Lab 6b - Artifact Attestation and Pinning
+
+# Public repo: attestations work on all plans.
+# After the run:
+#   gh run download <run-id> -n app-bundle
+#   gh attestation verify app.tgz --repo ${{ github.repository }}
+
+on:
+  workflow_dispatch:
+
+permissions: {}            # start from zero; grant per job
+
+jobs:
+  build-and-attest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write       # Sigstore signing certificate via OIDC
+      attestations: write   # store the attestation
+    steps:
+      # Exercise: replace each tag below with a full 40-char commit SHA
+      # and keep the tag as a comment, e.g.
+      #   uses: actions/checkout@<sha>  # v7.x.y
+      # Find a SHA with: gh api repos/actions/checkout/commits/v7 --jq .sha
+      - uses: actions/checkout@v7
+      - name: Build a bundle
+        run: |
+          mkdir -p dist
+          tar czf dist/app.tgz README.md lessons/
+          sha256sum dist/app.tgz | tee dist/app.tgz.sha256
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/app.tgz
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app-bundle
+          path: dist/app.tgz
+          retention-days: 3
+
+  token-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Show the token cannot write issues (expected 403)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/$GITHUB_REPOSITORY/issues" -f title=x -f body=y
+      - name: Runner facts
+        run: |
+          echo "runner.environment=${{ runner.environment }}"
+          echo "ImageOS=$ImageOS ImageVersion=$ImageVersion"
+          echo "tool cache: ${{ runner.tool_cache }}"
+          ls "${{ runner.tool_cache }}" || true
