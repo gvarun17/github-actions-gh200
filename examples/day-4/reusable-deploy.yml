@@ -1,0 +1,42 @@
+# Reference reusable workflow (put in .github/workflows/ of a central repo).
+# The environment job lives HERE, so environment secrets are available.
+name: Reusable - Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      image-tag:
+        type: string
+        required: true
+    secrets:
+      slack-webhook:
+        required: false
+    outputs:
+      url:
+        description: Deployed URL
+        value: ${{ jobs.deploy.outputs.url }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ github.repository }}-${{ inputs.environment }}
+      cancel-in-progress: false
+    outputs:
+      url: ${{ steps.d.outputs.url }}
+    steps:
+      - id: d
+        env:
+          TAG: ${{ inputs.image-tag }}
+          ENV_NAME: ${{ inputs.environment }}
+        run: |
+          echo "deploy $TAG to $ENV_NAME"
+          echo "url=https://$ENV_NAME.example.com" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,72 @@
+name: Lab 2b - Expressions and Script Injection
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Try: hello"; echo PWNED #'
+        type: string
+        default: 'hello"; echo PWNED #'
+
+permissions:
+  contents: read
+
+jobs:
+  expressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DEMO: ${{ secrets.DEMO }}
+    steps:
+      - name: Ternary-style expression
+        env:
+          STAGE: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+        run: echo "stage=$STAGE"
+
+      - name: Functions
+        env:
+          FORMATTED: ${{ format('{0}-{1}', github.repository, github.run_number) }}
+          IS_LAB: ${{ contains(github.workflow, 'Lab') }}
+          REQ_HASH: ${{ hashFiles('requirements.txt') }}
+        run: |
+          echo "format   -> $FORMATTED"
+          echo "contains -> $IS_LAB"
+          echo "hashFiles -> $REQ_HASH"
+
+      - name: Secret tested through env (secrets are not allowed in if)
+        if: env.DEMO != ''
+        run: echo "DEMO is set"
+
+      - name: Mask a derived value
+        run: |
+          DERIVED=$(printf '%s' "$DEMO" | base64)
+          echo "::add-mask::$DERIVED"
+          echo "derived=$DERIVED"
+
+  injection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # UNSAFE on purpose: the input text becomes part of the script.
+      # Run once with the default input and look for "PWNED" in the log.
+      - name: Unsafe interpolation (demonstration only)
+        continue-on-error: true
+        run: echo "Title is ${{ inputs.title }}"
+
+      - name: Safe - pass through env and quote
+        env:
+          TITLE: ${{ inputs.title }}
+        run: echo "Title is $TITLE"
+
+  status-functions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - id: fail
+        continue-on-error: true
+        run: exit 1
+      - name: outcome vs conclusion
+        run: echo "outcome=${{ steps.fail.outcome }} conclusion=${{ steps.fail.conclusion }}"
+      - name: Runs on success or failure, not on cancel
+        if: ${{ !cancelled() }}
+        run: echo "cleanup"

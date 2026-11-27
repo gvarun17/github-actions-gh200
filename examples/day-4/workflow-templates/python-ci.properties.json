@@ -1,0 +1,7 @@
+{
+  "name": "Python CI (Platform)",
+  "description": "Calls the platform reusable Python CI workflow.",
+  "iconName": "python",
+  "categories": ["Python"],
+  "filePatterns": ["requirements.txt$", "pyproject.toml$"]
+}

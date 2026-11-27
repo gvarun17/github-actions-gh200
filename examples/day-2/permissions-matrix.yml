@@ -1,0 +1,28 @@
+# Reference only. Common least-privilege GITHUB_TOKEN sets.
+ci-read-only:
+  permissions:
+    contents: read
+
+comment-on-pr:
+  permissions:
+    contents: read
+    pull-requests: write
+
+publish-package-to-ghcr:
+  permissions:
+    contents: read
+    packages: write
+
+oidc-cloud-deploy:
+  permissions:
+    contents: read
+    id-token: write
+
+artifact-attestation:
+  permissions:
+    contents: read
+    id-token: write
+    attestations: write
+
+no-token-at-all:
+  permissions: {}

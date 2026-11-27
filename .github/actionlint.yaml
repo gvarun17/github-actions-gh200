@@ -1,0 +1,6 @@
+# actionlint config. `queue: max` (concurrency, May 2026) is newer than some
+# actionlint releases; ignore that one syntax error until actionlint knows it.
+paths:
+  .github/workflows/**/*.{yml,yaml}:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'

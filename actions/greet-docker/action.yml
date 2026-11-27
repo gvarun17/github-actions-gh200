@@ -1,0 +1,17 @@
+name: Greet (Docker)
+description: Example Docker container action for Day 5 (Linux runners only)
+inputs:
+  who:
+    description: Who to greet
+    required: true
+    default: World
+outputs:
+  time:
+    description: UTC time of the greeting
+runs:
+  using: docker
+  image: Dockerfile
+  args:
+    - ${{ inputs.who }}
+  env:
+    GREETING_PREFIX: Hello

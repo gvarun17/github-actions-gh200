@@ -4,9 +4,9 @@
 
 1. Expressions use `${{ }}`; in `if:` the wrapper is optional, but an `if` starting with `!` must be quoted or wrapped.
 2. Handy functions: `contains`, `startsWith`, `endsWith`, `format`, `join`, `toJSON`/`fromJSON`, `hashFiles` (cache keys).
-3. Status checks: `success()` (implicit default), `failure()`, `always()`, `cancelled()`; use `always()` for cleanup.
+3. Status checks: `success()` (implicit default), `failure()`, `always()`, `cancelled()`; `always()` runs even after a cancel; use `if: ${{ !cancelled() }}` for cleanup that should stop on cancel.
 4. Key contexts: `github`, `env`, `vars`, `secrets`, `job`, `steps`, `runner`, `strategy`/`matrix`, `needs`, `inputs`.
-5. Context availability depends on the key: `env` is not available in `runs-on`, and `secrets` can't be used directly in a job-level `if`.
+5. Context availability depends on the key: `env` is not available in `runs-on`, and `secrets` can't be used directly in any `if` (job or step); map them to `env` first.
 6. `steps.<id>.outcome` is before `continue-on-error` is applied; `conclusion` is after.
 7. `env` scopes: workflow, job, step; innermost wins. `GITHUB_*` and `RUNNER_*` names are reserved.
 8. `vars` (non-sensitive) and `secrets` exist at org, repo, and environment level; most specific wins (environment > repo > org).

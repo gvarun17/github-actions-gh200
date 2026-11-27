@@ -1,0 +1,39 @@
+# Reference only (not in .github/workflows, so it never runs).
+# Copy a block into a workflow file to try it.
+name: Triggers cookbook
+
+on:
+  push:
+    branches: ['main', 'release/**', '!release/**-alpha']
+    tags: ['v*.*.*']
+    paths-ignore: ['docs/**', '**.md']
+  pull_request:
+    branches: [main]              # base branch of the PR
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+  schedule:
+    - cron: '45 20 * * 1-5'       # 02:15 IST, Mon-Fri
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  repository_dispatch:
+    types: [deploy]
+  issues:
+    types: [opened, labeled]
+  merge_group:
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merged PR only
+        if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+        run: echo "PR merged"
+      - name: Upstream CI passed
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+        run: echo "CI passed"
+      - name: External trigger
+        if: github.event_name == 'repository_dispatch'
+        env:
+          TARGET: ${{ github.event.client_payload.env }}
+        run: echo "deploy to $TARGET"

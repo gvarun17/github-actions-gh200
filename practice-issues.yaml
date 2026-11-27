@@ -1,0 +1,708 @@
+# Source of truth for practice issues.
+# Generate with: python3 scripts/create_issues.py --dry-run   (then without --dry-run)
+# Each issue `key` is stable; the script skips issues whose title already exists.
+
+repo: gvarun17/github-actions-gh200
+
+topics:
+  day-1:
+    name: Fundamentals, triggers, anchors
+    lesson: lessons/day-1-fundamentals-and-triggers.md
+    milestone: "Day 1 - Fundamentals and triggers"
+  day-2:
+    name: Contexts, variables, secrets
+    lesson: lessons/day-2-contexts-variables-secrets.md
+    milestone: "Day 2 - Contexts, variables, secrets"
+  day-3:
+    name: Jobs, matrix, artifacts, cache
+    lesson: lessons/day-3-jobs-matrix-artifacts-cache.md
+    milestone: "Day 3 - Jobs, matrix, artifacts, cache"
+  day-4:
+    name: Reuse, environments, concurrency, debugging
+    lesson: lessons/day-4-reuse-environments-debugging.md
+    milestone: "Day 4 - Reuse, environments, debugging"
+  day-5:
+    name: Custom actions
+    lesson: lessons/day-5-authoring-actions.md
+    milestone: "Day 5 - Custom actions"
+  day-6:
+    name: Enterprise, runners, security, OIDC
+    lesson: lessons/day-6-enterprise-runners-security.md
+    milestone: "Day 6 - Enterprise and security"
+  day-7:
+    name: Review and mock exam
+    lesson: lessons/day-7-review-and-practice.md
+    milestone: "Day 7 - Review"
+
+issues:
+  # ---------------------------------------------------------------- Day 1
+  - key: d1-filters
+    topic: day-1
+    difficulty: beginner
+    type: lab
+    title: "[Triggers] Beginner: Build a CI trigger with branch, path and tag filters"
+    objective: Write `on:` filters that start CI only for the right branches, paths and tags.
+    scenario: >-
+      Your team wants CI on pushes to `main` and `release/**` (but not `release/**-alpha`),
+      on PRs to `main` that change code (not docs), and on version tags `v*.*.*`.
+    tasks:
+      - "Create `.github/workflows/practice-d1-filters.yml` with `push`, `pull_request` and `tags` filters for the scenario."
+      - "Add one job that prints `github.event_name`, `github.ref` and `github.base_ref`."
+      - Push a docs-only commit on a PR branch and confirm no run starts.
+      - "Push a tag `v0.0.1-practice` and confirm a run starts."
+    constraints:
+      - "Do not use `branches` and `branches-ignore` together; use `!` patterns."
+      - "Runs must use `ubuntu-latest` only."
+    acceptance:
+      - "`actionlint` reports no errors for the file."
+      - "A docs-only PR has no run for this workflow (screenshot or `gh run list` output in a comment)."
+      - A tag push produced one run (link in a comment).
+      - "A `release/1.0-alpha` push produces no run."
+    hints:
+      - "`pull_request.branches` matches the base branch of the PR."
+      - "Order of patterns matters; a later `!` pattern excludes what an earlier pattern included."
+    stretch: Add `merge_group` so the workflow also works with a merge queue; explain in a comment why required checks need it.
+
+  - key: d1-dispatch-inputs
+    topic: day-1
+    difficulty: beginner
+    type: lab
+    title: "[Triggers] Beginner: Start a typed workflow_dispatch from the CLI"
+    objective: Define typed manual inputs and see the difference between `inputs` and `github.event.inputs`.
+    scenario: >-
+      Release managers start a deploy by hand. They pick `dev`, `staging` or `prod`, a replica count
+      and a dry-run flag. The workflow must reject `prod` with `dry-run=false` unless a confirmation string is typed.
+    tasks:
+      - "Create `practice-d1-dispatch.yml` with inputs `target` (choice), `replicas` (number), `dry-run` (boolean), `confirm` (string)."
+      - "Add a step that fails with `::error::` when `target == 'prod'`, `dry-run` is false and `confirm != 'DEPLOY'`."
+      - "Write all input values and their types to `$GITHUB_STEP_SUMMARY`."
+      - "Trigger it 3 times with `gh workflow run ... -f ...` using different values."
+    constraints:
+      - "Read inputs through `env:`, not inline in `run:`."
+    acceptance:
+      - Three run links posted; one of them fails with your error annotation.
+      - "The summary shows that `github.event.inputs.dry-run` is a string and `inputs.dry-run` is a boolean."
+    hints:
+      - "Boolean comparison: `inputs.dry-run == false` vs `github.event.inputs.dry-run == 'false'`."
+      - "`gh workflow run NAME -f target=prod -f dry-run=false`."
+    stretch: Add an `environment` type input and use it as `environment:` for the job.
+
+  - key: d1-anchors
+    topic: day-1
+    difficulty: intermediate
+    type: build
+    title: "[YAML anchors] Intermediate: Remove duplication with anchors and aliases"
+    objective: Use `&anchor` and `*alias` correctly and prove that merge keys are rejected.
+    scenario: >-
+      A workflow has three jobs (lint, test, build) that repeat the same `env`, checkout step,
+      setup-python step and path filters for push and pull_request.
+    tasks:
+      - "Write `practice-d1-anchors.yml` with three jobs that share `env`, the checkout step and the setup step through aliases."
+      - "Share one `paths:` list between `push` and `pull_request`."
+      - "Create a branch that adds `<<: *defaults` to a job and push it. Record the error."
+      - "Write the fully expanded YAML of one job in `solutions/day-1/<issue>/expanded.yml` (use `yq 'explode(.)'` or expand by hand)."
+    constraints:
+      - One workflow file only (anchors do not cross files).
+    acceptance:
+      - The anchored workflow runs green.
+      - The merge-key branch shows an "Invalid workflow file" error (link or screenshot).
+      - "`expanded.yml` matches what the run log shows for that job."
+    hints:
+      - An alias copies the whole node; you cannot override one key of an aliased mapping.
+      - "Anchor a whole step with `- &checkout` then reuse it with `- *checkout`."
+    stretch: Explain in a comment when you would choose a composite action instead of anchors.
+
+  - key: d1-debug-no-run
+    topic: day-1
+    difficulty: intermediate
+    type: debug
+    title: "[Triggers] Intermediate: Debug five workflows that never start"
+    objective: Diagnose why a workflow does not run, using only the YAML, the commit and repo settings.
+    scenario: >-
+      A teammate says "CI is broken, nothing runs". You find five candidate causes in different branches.
+    tasks:
+      - "Create five small workflows (or branches), each with one fault: (1) file in `.github/workflows/ci/`, (2) `branches` + `branches-ignore`, (3) `schedule` only on a feature branch, (4) commit message with `[skip ci]`, (5) push made by `GITHUB_TOKEN` from another workflow."
+      - "For each, record the symptom and the fix in `solutions/day-1/<issue>/README.md` as a table."
+      - Fix all five and show one green run per fix.
+    constraints:
+      - Clean up the broken files after the exercise.
+    acceptance:
+      - Table with 5 rows (symptom, cause, fix, evidence link).
+      - Five green run links after the fixes.
+    hints:
+      - Some faults show an error in the Actions tab; some show nothing at all.
+      - "The `GITHUB_TOKEN` rule has two exceptions: `workflow_dispatch` and `repository_dispatch`."
+    stretch: Chain fault (5) correctly with `repository_dispatch` and prove that it starts the second workflow.
+
+  # ---------------------------------------------------------------- Day 2
+  - key: d2-injection
+    topic: day-2
+    difficulty: beginner
+    type: debug
+    title: "[Script injection] Beginner: Exploit and fix an injectable issue workflow"
+    objective: See script injection happen and fix it with environment variables.
+    scenario: >-
+      A triage workflow runs on `issues: [opened]` and echoes the issue title inline in `run:`.
+      A user opens an issue titled `test"; echo "INJECTED`.
+    tasks:
+      - "Create `practice-d2-triage.yml` that is vulnerable on purpose (inline `${{ github.event.issue.title }}`)."
+      - Open an issue with the malicious title. Find the injected output in the log.
+      - "Fix it by passing the title through `env:` and quoting `\"$TITLE\"`."
+      - Open a second issue with the same title and confirm it prints as text.
+    constraints:
+      - "Set `permissions: { contents: read }` so the demo cannot do damage."
+      - Close and delete the test issues after the exercise.
+    acceptance:
+      - "Link to the vulnerable run that shows `INJECTED` executed as a command."
+      - Link to the fixed run that shows the title as plain text.
+      - "A list of 5 other untrusted `github.event` fields in your solution notes."
+    hints:
+      - "`${{ }}` is replaced before the shell runs; the shell sees the attacker's quote."
+      - "Lab 2b has the same pattern with a `workflow_dispatch` input."
+    stretch: Run CodeQL (or `actionlint`) on the vulnerable file and post what it reports.
+
+  - key: d2-context-availability
+    topic: day-2
+    difficulty: intermediate
+    type: debug
+    title: "[Contexts] Intermediate: Fix context-availability errors in a broken workflow"
+    objective: Know which contexts each key allows and fix invalid references.
+    scenario: >-
+      A workflow fails to load with errors such as `Unrecognized named-value: 'env'` and `'secrets'`.
+    tasks:
+      - "Write `practice-d2-broken.yml` with these faults: `runs-on: ${{ env.OS }}`, job-level `if: secrets.TOKEN != ''`, `${{ env.GITHUB_SHA }}` in a step, `if: ${{ false }} && true`, and a missing `contents: read` after adding `id-token: write`."
+      - Push it and record each error.
+      - Fix every fault with the correct context or pattern.
+    constraints:
+      - Keep the same intent for each line after the fix.
+    acceptance:
+      - Table in solutions with error text → cause → fix for all 5 faults.
+      - The fixed workflow runs green.
+    hints:
+      - "`runs-on` allows `github`, `needs`, `strategy`, `matrix`, `vars`, `inputs`."
+      - "Secrets: map to `env` then test `env.X` in a step `if:`."
+    stretch: Dump `toJSON(github)`, `toJSON(runner)` and `toJSON(job)` into the job summary inside collapsible `<details>` blocks.
+
+  - key: d2-vars-secrets-env
+    topic: day-2
+    difficulty: intermediate
+    type: lab
+    title: "[Variables] Intermediate: Prove vars and secrets precedence across levels"
+    objective: Show environment > repository > organization precedence for `vars` and `secrets`.
+    scenario: >-
+      The same name `APP_REGION` exists as a repo variable and as an environment variable
+      in `staging`. A secret `DB_PASS` exists at repo and environment level.
+    tasks:
+      - "Create repo variable `APP_REGION=ap-south-1` and env `staging` variable `APP_REGION=us-east-1` with `gh variable set`."
+      - "Create `DB_PASS` at repo and at `staging` with different values via `gh secret set`."
+      - "Write `practice-d2-precedence.yml` with two jobs: one without `environment:` and one with `environment: staging`."
+      - "Print `vars.APP_REGION` and the SHA-256 of `DB_PASS` (never the value) in each job."
+    constraints:
+      - Never print a secret value; print a hash or length only.
+    acceptance:
+      - The job without environment prints the repo values; the staging job prints the environment values.
+      - "`python3 examples/day-2/list_secrets_vars.py OWNER/REPO` output is in a comment (names only)."
+    hints:
+      - "Environment secrets are released only to jobs that declare `environment:`."
+      - "Hash in bash: `printf '%s' \"$DB_PASS\" | sha256sum`."
+    stretch: Create a secret with the REST API yourself (get public key, encrypt with PyNaCl sealed box, PUT) instead of `gh secret set`.
+
+  - key: d2-token-permissions
+    topic: day-2
+    difficulty: advanced
+    type: design
+    title: "[GITHUB_TOKEN] Advanced: Design least-privilege permissions for a PR bot"
+    objective: Grant only the token scopes each job needs and prove it with failing and passing calls.
+    scenario: >-
+      A PR workflow has 3 jobs: `test` (reads code), `label` (adds a label to the PR),
+      `comment` (posts a coverage comment). Today it uses `permissions: write-all`.
+    tasks:
+      - "Set workflow-level `permissions: {}`."
+      - Give each job only the scopes it needs.
+      - "Add a step in `test` that tries to add a label and must fail with 403 (`continue-on-error`)."
+      - "Write a table in solutions comparing `GITHUB_TOKEN`, fine-grained PAT and GitHub App token for this bot."
+    constraints:
+      - No PAT may be stored for this exercise.
+    acceptance:
+      - "Three jobs run; `label` and `comment` succeed; the negative test shows 403."
+      - The permissions table and a short justification for each scope.
+    hints:
+      - Labels on PRs use the issues API; check which scope that needs.
+      - "Job-level `permissions` replace the workflow-level block for that job."
+    stretch: Make the bot work for PRs from forks without `pull_request_target` (use `workflow_run` with artifacts and explain the trust boundary).
+
+  # ---------------------------------------------------------------- Day 3
+  - key: d3-matrix-design
+    topic: day-3
+    difficulty: beginner
+    type: lab
+    title: "[Matrix] Beginner: Predict and verify a matrix with include and exclude"
+    objective: Predict matrix expansion before running it, then compare with the real run.
+    scenario: >-
+      You test Python 3.11–3.13 on Ubuntu and Windows, skip 3.11 on Windows, add an extra
+      `coverage: true` key to Ubuntu 3.13 and add a new Arm leg `ubuntu-24.04-arm` / 3.13.
+    tasks:
+      - "Write the matrix in `solutions/day-3/<issue>/matrix.json`."
+      - "Run `python3 examples/day-3/matrix_expand.py` and save the predicted job list."
+      - "Create `practice-d3-matrix.yml` with the same matrix and run it."
+      - Compare the predicted list with the job names in the UI.
+    constraints:
+      - "Set `fail-fast: false` and `max-parallel: 3`."
+    acceptance:
+      - Predicted job count equals the real job count.
+      - "Only Ubuntu 3.13 prints `coverage=true`."
+    hints:
+      - "`exclude` is applied before `include`."
+      - "An `include` entry that matches no combination without overwriting an original value becomes a new job."
+    stretch: Make one leg fail on purpose, then re-run only that single job and post the `run_attempt` value.
+
+  - key: d3-dynamic-matrix
+    topic: day-3
+    difficulty: intermediate
+    type: build
+    title: "[Matrix] Intermediate: Build a dynamic matrix from changed folders"
+    objective: Generate a matrix at runtime with `fromJSON` and pass per-leg results through artifacts.
+    scenario: >-
+      A monorepo has `services/api`, `services/web`, `services/worker`. CI must test only the services
+      changed in the push, and a final job must report all results.
+    tasks:
+      - "Create three folders under `solutions/day-3/<issue>/services/` with a small script each."
+      - "Job `detect`: compute changed service folders with `git diff --name-only` and output a JSON list."
+      - "Job `test`: `strategy.matrix.service: ${{ fromJSON(needs.detect.outputs.services) }}`; upload `result-<service>`."
+      - "Job `report`: `if: ${{ !cancelled() }}`; download `result-*` with `merge-multiple` and write a summary table."
+      - Handle the empty case (no service changed) so the workflow does not fail.
+    constraints:
+      - "Use `actions/checkout` with enough `fetch-depth` for the diff."
+    acceptance:
+      - "A push that changes one service runs exactly one `test` job."
+      - "A push that changes no service skips `test` cleanly."
+      - The report summary lists every leg.
+    hints:
+      - "An empty matrix is an error; guard the job with `if: needs.detect.outputs.services != '[]'`."
+      - Matrix job outputs overwrite each other; use artifacts for per-leg data.
+    stretch: Add a cache per service keyed on `hashFiles('services/<name>/requirements.txt')`.
+
+  - key: d3-cache-tuning
+    topic: day-3
+    difficulty: intermediate
+    type: lab
+    title: "[Cache] Intermediate: Measure cache hits, misses and branch scope"
+    objective: Show exact hits, restore-key hits and the branch scope rule with real runs.
+    scenario: >-
+      Builds are slow. You add `actions/cache` and need to prove when it helps and when it does not.
+    tasks:
+      - "Create `practice-d3-cache.yml` that caches a folder with key `<os>-<hashFiles(requirements.txt)>` and a `restore-keys` prefix."
+      - "Run on `main` twice (miss then exact hit)."
+      - "Change `requirements.txt` on a branch and run (restore-key hit)."
+      - "Create a sibling branch from `main` (not from the first branch) and show it cannot see the first branch's cache."
+      - "Use `gh cache list` and `gh cache delete` to clean up."
+    constraints:
+      - Do not cache any credentials or tokens.
+    acceptance:
+      - "Four run links with `cache-hit` values (`''`/miss, `true`, `false`/partial, miss) explained."
+      - "`gh cache list` output before and after cleanup."
+    hints:
+      - "`cache-hit` is `true` only for an exact key match."
+      - A branch can read caches from itself, its base branch and the default branch.
+    stretch: Split restore and save with `actions/cache/restore` and `actions/cache/save` so the cache is saved even when tests fail.
+
+  - key: d3-services
+    topic: day-3
+    difficulty: advanced
+    type: build
+    title: "[Services] Advanced: Integration-test a Python app against Postgres and Redis"
+    objective: Run a job with two service containers, health checks and correct host names.
+    scenario: >-
+      A Python service stores orders in Postgres and caches them in Redis. CI must run real integration tests.
+    tasks:
+      - "Write `solutions/day-3/<issue>/app.py` and `test_app.py` (pytest) that insert a row in Postgres and set/get a Redis key."
+      - "Job A: runs on the runner (`localhost` + mapped ports)."
+      - "Job B: runs in `container: python:3.13-slim` (service labels as host names)."
+      - Add health checks for both services.
+      - Upload the pytest JUnit XML as an artifact and write a summary.
+    constraints:
+      - "Credentials for the services come from workflow `env`, not secrets (test-only values)."
+    acceptance:
+      - Both jobs pass.
+      - The solution explains why the host differs between Job A and Job B.
+    hints:
+      - "Read a random host port with `${{ job.services.postgres.ports['5432'] }}`."
+      - "Redis health check: `--health-cmd \"redis-cli ping\"`."
+    stretch: Run the tests across a matrix of Postgres 15/16/17 images.
+
+  # ---------------------------------------------------------------- Day 4
+  - key: d4-reusable
+    topic: day-4
+    difficulty: beginner
+    type: build
+    title: "[Reusable workflows] Beginner: Extract a reusable Python CI workflow"
+    objective: Turn a copied CI job into a reusable workflow with inputs, secrets and outputs.
+    scenario: >-
+      Three repos copy the same 40-line Python CI. You move it into one reusable workflow.
+    tasks:
+      - "Create `.github/workflows/practice-reusable-python-ci.yml` with `on: workflow_call`, inputs `python-version` (string) and `run-lint` (boolean), an optional secret, and an output `coverage`."
+      - "Create a caller workflow that calls it twice in a matrix (`3.12`, `3.13`)."
+      - "Read the `coverage` output in a later job of the caller."
+    constraints:
+      - "The caller job may only use keys allowed with `uses:`."
+    acceptance:
+      - Caller run shows two called-workflow jobs and a final job that prints both coverage values.
+      - Solution notes list 3 rules of reusable workflows you hit.
+    hints:
+      - "Output chain: step output → job outputs → `on.workflow_call.outputs` → `needs.<job>.outputs`."
+      - "`runs-on` is not allowed on a caller job that has `uses:`."
+    stretch: Call it from a second repo by `owner/repo/.github/workflows/file.yml@<sha>`.
+
+  - key: d4-environments
+    topic: day-4
+    difficulty: intermediate
+    type: lab
+    title: "[Environments] Intermediate: Gate production with reviewers, branch rules and env secrets"
+    objective: Configure environment protection and see secrets released only after approval.
+    scenario: >-
+      Production deploys need one approval, may only come from `main`, and use an environment-only secret.
+    tasks:
+      - "Create environments `staging` (no rules) and `production` (you as required reviewer, `main` only, 1-minute wait timer)."
+      - "Add environment secret `DEPLOY_KEY` only in `production`."
+      - "Write `practice-d4-deploy.yml`: `staging` job → `production` job with `environment.url`."
+      - "Try to deploy `production` from a feature branch. Record the error."
+      - "Deploy from `main`, approve, and check the Deployments view."
+    constraints:
+      - "Print only whether `DEPLOY_KEY` is set, never its value."
+    acceptance:
+      - Run link showing the branch rule rejection.
+      - Run link showing approval, wait timer and successful deploy with URL.
+      - "The `staging` job shows `DEPLOY_KEY` is empty."
+    hints:
+      - Required reviewers and wait timers work on Free only in public repos (this repo is public).
+      - "`secrets: inherit` would not pass `DEPLOY_KEY` to a reusable workflow."
+    stretch: Move the production job into a reusable workflow and keep the gate working.
+
+  - key: d4-concurrency
+    topic: day-4
+    difficulty: intermediate
+    type: lab
+    title: "[Concurrency] Intermediate: Compare replace, cancel-in-progress and queue: max"
+    objective: Observe the three concurrency behaviours with real overlapping runs.
+    scenario: >-
+      PR CI should cancel old runs. Deploys must never be cancelled and every deploy must run.
+    tasks:
+      - "Create `practice-d4-concurrency.yml` with a 60-second job and `workflow_dispatch` input `mode` (`replace`, `cancel`, `queue`)."
+      - "Use three jobs (or three workflow files) with job-level `concurrency` for each mode."
+      - For each mode, trigger 3 runs within 20 seconds.
+      - Record which runs completed, were cancelled, or waited.
+    constraints:
+      - "Use group names that include `github.workflow`."
+    acceptance:
+      - A table with 3 modes × 3 runs and their final state.
+      - "Proof that `queue: max` with `cancel-in-progress: true` is rejected."
+    hints:
+      - Default behaviour keeps one running and one pending; a newer pending run replaces the older one.
+      - "`queue: max` keeps up to 100 waiting runs."
+    stretch: "Use an expression for `cancel-in-progress` so branches cancel but `main` never does."
+
+  - key: d4-debugging
+    topic: day-4
+    difficulty: advanced
+    type: debug
+    title: "[Debugging] Advanced: Diagnose a failing run with debug logs and the API"
+    objective: Use debug logging, re-runs and the REST API to find a hidden failure cause.
+    scenario: >-
+      A workflow fails only on re-runs and only sometimes. The log shows no error before the failing step.
+    tasks:
+      - "Create `practice-d4-flaky.yml` that fails when `github.run_attempt` is even and prints a `::debug::` hint."
+      - Run it, re-run failed jobs with debug logging, and find the hint.
+      - "Use `gh run view --log-failed` and `gh api repos/OWNER/REPO/actions/runs/RUN_ID/attempts/N` to compare attempts."
+      - Write a short incident note (symptom, timeline, root cause, fix).
+      - "Cancel a run mid-way and show which steps ran (`always()`, `cancelled()`, `!cancelled()`, default)."
+    constraints:
+      - "Remove `ACTIONS_STEP_DEBUG` / `ACTIONS_RUNNER_DEBUG` variables after the exercise."
+    acceptance:
+      - Incident note in solutions.
+      - "Table of the four `if:` conditions with ran / did not run after cancel."
+    hints:
+      - "`runner.debug` is `1` when debug logging is on."
+      - "`always()` returns true even after cancel."
+    stretch: Write a Python script that downloads the log ZIP of the last failed run through the REST API and prints the failing step name.
+
+  # ---------------------------------------------------------------- Day 5
+  - key: d5-composite
+    topic: day-5
+    difficulty: beginner
+    type: build
+    title: "[Composite action] Beginner: Package setup + test steps as a composite action"
+    objective: Write a composite action with inputs, outputs and a bundled script.
+    scenario: >-
+      Ten workflows repeat "setup Python, install deps, run pytest, write a summary". You package it once.
+    tasks:
+      - "Create `.github/actions/py-test/action.yml` (composite) with inputs `python-version`, `path` and output `passed`."
+      - "Call `actions/setup-python` inside it and run a script stored next to `action.yml` via `${{ github.action_path }}`."
+      - "Call it from `practice-d5-composite.yml` on Ubuntu and Windows."
+    constraints:
+      - "Every `run` step has `shell:`; inputs reach scripts through `env:`."
+    acceptance:
+      - Runs pass on both OSes.
+      - "The caller prints the `passed` output."
+    hints:
+      - "Output mapping: `value: ${{ steps.<id>.outputs.<name> }}`."
+      - "A local action needs `actions/checkout` first."
+    stretch: Add a `deprecationMessage` to an old input and show the warning in the log.
+
+  - key: d5-js-action
+    topic: day-5
+    difficulty: intermediate
+    type: build
+    title: "[JavaScript action] Intermediate: Extend greet-js with validation, state and tests"
+    objective: Change a Node 24 action, rebuild `dist/`, and keep CI proving `dist/` is current.
+    scenario: >-
+      Users want `greet-js` to accept a `language` input (en, hi, es) and to report run time in the post step.
+    tasks:
+      - "Add input `language` with validation in `actions/greet-js/src/index.js`."
+      - "Save the start time with `core.saveState` and print duration in `src/post.js`."
+      - "Add tests in `actions/greet-js/test/` for each language and for an invalid value."
+      - "Add `practice-d5-js-ci.yml`: `npm ci`, `npm test`, `npm run build`, `git diff --exit-code dist/`."
+    constraints:
+      - "`runs.using` stays `node24`."
+    acceptance:
+      - "CI passes; it fails if you change `src/` without rebuilding `dist/` (show one failing run)."
+      - Lab 5 still passes.
+    hints:
+      - "`core.getInput` returns `''` for missing inputs; `required: true` is not enforced."
+      - "State written with `saveState` is read in `post` as `STATE_<name>` or `core.getState`."
+    stretch: Add `@actions/github` and post the greeting as a PR comment when the event is `pull_request`.
+
+  - key: d5-docker-action
+    topic: day-5
+    difficulty: intermediate
+    type: lab
+    title: "[Docker action] Intermediate: Prebuild the Docker action image and compare start time"
+    objective: "Compare `image: Dockerfile` with a prebuilt `docker://` image."
+    scenario: >-
+      `greet-docker` builds its image in every job. You publish the image to GHCR and reference it directly.
+    tasks:
+      - "Write `practice-d5-publish-image.yml` that builds `actions/greet-docker` and pushes `ghcr.io/<owner>/greet-docker:<sha>` (`packages: write`)."
+      - "Create `actions/greet-docker-prebuilt/action.yml` that uses `image: docker://ghcr.io/...`."
+      - Run both actions and compare the "Build container" / "Pull" times in the log.
+      - "Run the prebuilt action on `windows-latest` and record the error."
+    constraints:
+      - "Use `GITHUB_TOKEN` to log in to GHCR (no PAT)."
+    acceptance:
+      - Timing table (Dockerfile vs prebuilt).
+      - Windows error text in the solution notes.
+    hints:
+      - "`docker/login-action` with `registry: ghcr.io`, `username: ${{ github.actor }}`, `password: ${{ secrets.GITHUB_TOKEN }}`."
+      - Make the package public or grant the repo access in package settings.
+    stretch: Add an image attestation (`actions/attest-build-provenance` with `subject-name` and `subject-digest`).
+
+  - key: d5-release
+    topic: day-5
+    difficulty: advanced
+    type: design
+    title: "[Versioning] Advanced: Release an action with immutable releases and a moving major tag"
+    objective: Design and run a release process that consumers can pin safely.
+    scenario: >-
+      You publish `greet-js` for other teams. They want `@v1` convenience; security wants SHA pins and immutable releases.
+    tasks:
+      - "Create a public repo `greet-js-action` with `action.yml` at the root (copy from this repo)."
+      - "Enable immutable releases. Publish `v1.0.0` as a release."
+      - "Create a plain Git tag `v1` and move it on `v1.0.1`."
+      - "Write `RELEASING.md`: semver rules, when to cut `v2`, how consumers pin `@<sha>  # v1.0.1`."
+      - "Try to move the `v1.0.0` tag and record the error."
+    constraints:
+      - The Marketplace checkbox is optional; if you publish, follow all Marketplace requirements.
+    acceptance:
+      - Release page shows "Immutable".
+      - "Error when you try to move `v1.0.0`."
+      - A consumer workflow pinned to the full SHA runs green.
+    hints:
+      - Releases with immutability protect their tags; plain tags without a release can still move.
+      - "Get a tag's commit: `gh api repos/OWNER/REPO/commits/v1.0.1 --jq .sha`."
+    stretch: Add Dependabot to the consumer repo and show it opening a PR from `v1.0.0` to `v1.0.1` SHA.
+
+  # ---------------------------------------------------------------- Day 6
+  - key: d6-pin-and-lock
+    topic: day-6
+    difficulty: beginner
+    type: lab
+    title: "[Supply chain] Beginner: Pin every action in this repo to a full commit SHA"
+    objective: Replace mutable tags with SHAs and keep them updated with Dependabot.
+    scenario: >-
+      Security asks you to pass the "Require actions to be pinned to a full-length commit SHA" policy.
+    tasks:
+      - "List every `uses:` reference in `.github/workflows/`."
+      - "Resolve each tag to a SHA with `gh api repos/<owner>/<action>/commits/<tag> --jq .sha` and keep the tag as a comment."
+      - "Copy `examples/day-6/dependabot.yml` to `.github/dependabot.yml`."
+      - Turn on "Require SHA pinning" in repo Settings → Actions, and run two labs.
+    constraints:
+      - "Local actions (`./actions/...`) stay as paths."
+    acceptance:
+      - "`grep -R \"uses: .*@v[0-9]\" .github/workflows` returns nothing."
+      - Two lab runs pass with the policy on.
+    hints:
+      - Short SHAs are rejected; use all 40 characters.
+      - Dependabot updates the SHA and the version comment together.
+    stretch: Generate `.github/workflows/actions.lock` with `gh actions-lock` and explain what it adds over SHA pins.
+
+  - key: d6-oidc-aws
+    topic: day-6
+    difficulty: intermediate
+    type: build
+    title: "[OIDC] Intermediate: Deploy to AWS with OIDC and a sub-scoped role"
+    objective: Remove AWS access keys and use short-lived OIDC credentials bound to one environment.
+    scenario: >-
+      A workflow stores `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as secrets. You replace them with OIDC.
+    tasks:
+      - "Apply `examples/day-6/terraform-oidc/` (or create the provider and role in the console) in a sandbox AWS account."
+      - "Create environment `prod` in this repo."
+      - "Write `practice-d6-oidc.yml`: `permissions: { id-token: write, contents: read }`, `environment: prod`, `aws-actions/configure-aws-credentials`, then `aws sts get-caller-identity`."
+      - "Run it from a job without `environment: prod` and record the AccessDenied error."
+    constraints:
+      - "No AWS keys in secrets. Delete the role after the exercise if it is not needed."
+    acceptance:
+      - The prod job prints the assumed role ARN.
+      - "The non-prod job fails with `Not authorized to perform sts:AssumeRoleWithWebIdentity`."
+      - "Lab 6 claim output is used to explain the `sub` value."
+    hints:
+      - "With `environment:`, the `sub` claim is `repo:OWNER/REPO:environment:NAME`."
+      - "A trust policy without a `sub` condition is a security hole."
+    stretch: Customize the org/repo OIDC `sub` claim template to include `job_workflow_ref` and update the trust policy.
+
+  - key: d6-self-hosted
+    topic: day-6
+    difficulty: intermediate
+    type: lab
+    title: "[Runners] Intermediate: Run an ephemeral self-hosted runner with custom labels"
+    objective: Register, target and remove a self-hosted runner safely.
+    scenario: >-
+      A job needs a tool that is only on your Mac (or a Linux VM). You add an ephemeral runner with label `lab-local`.
+    tasks:
+      - "Register a runner with `--ephemeral --labels lab-local` (LOCAL-SETUP.md Day 6)."
+      - "Write `practice-d6-selfhosted.yml` with `runs-on: [self-hosted, lab-local]` and print `runner.environment`, `runner.os`, `runner.arch`."
+      - Run it once; confirm the runner unregisters itself.
+      - Run it again with no runner online and record the queued state; cancel it.
+      - "Read the runner `_diag/` logs and note the job ID."
+    constraints:
+      - "Do not leave the runner registered. This repo is public; run only your own `workflow_dispatch` events."
+    acceptance:
+      - Run link from the self-hosted runner.
+      - "Screenshot or `gh api repos/OWNER/REPO/actions/runners` output showing the runner gone."
+    hints:
+      - "All labels in `runs-on` must match the runner."
+      - Registration tokens expire after one hour.
+    stretch: Deploy ARC runner scale sets on a local kind/minikube cluster and target the scale set name in `runs-on`.
+
+  - key: d6-attestation
+    topic: day-6
+    difficulty: intermediate
+    type: lab
+    title: "[Attestations] Intermediate: Attest a build and block deploy on failed verification"
+    objective: Generate build provenance and verify it before a deploy step.
+    scenario: >-
+      Auditors require proof that every deployed bundle was built by this repo's CI.
+    tasks:
+      - "Run Lab 6b and verify the bundle locally with `gh attestation verify`."
+      - "Write `practice-d6-verify.yml`: job `build` (attest), job `deploy` (download + `gh attestation verify` + fake deploy)."
+      - "Tamper with the file in `deploy` before verification and show the job fails."
+    constraints:
+      - "Grant `attestations: write` only to the build job."
+    acceptance:
+      - One green run with verification passing.
+      - One failing run with the tampered file.
+    hints:
+      - "Verification in a job needs `GH_TOKEN: ${{ github.token }}` and the repo name."
+      - Attestations are free for public repos.
+    stretch: Move the build into a reusable workflow and verify with `--signer-workflow` to reach SLSA Build Level 3 style checks.
+
+  - key: d6-governance
+    topic: day-6
+    difficulty: advanced
+    type: design
+    title: "[Governance] Advanced: Write an Actions governance design for a 500-repo org"
+    objective: Combine policies, runner groups, secrets scope, event policies and cost controls into one design.
+    scenario: >-
+      A fintech org has 500 repos, 3 business units, public open-source repos and private production repos.
+      Auditors need least privilege, traceability and cost limits.
+    tasks:
+      - "Write `solutions/day-6/<issue>/GOVERNANCE.md` (ADR format) covering: allowed actions + SHA pinning + lockfile policy, default token permissions, fork PR approvals, event policy for `pull_request_target`, runner groups (hosted, larger with static IP, ARC), secrets/variables scoping, OIDC claim template, retention, cache limits, budgets, audit log streaming."
+      - Add a Mermaid diagram of the policy hierarchy and runner groups.
+      - For each control, give the REST endpoint or UI path to set it.
+    constraints:
+      - Every claim must link to official documentation.
+    acceptance:
+      - ADR with context, decision, consequences and at least 12 controls.
+      - Diagram renders on GitHub.
+    hints:
+      - Lower levels can only tighten a higher level's policy.
+      - "`pull_request_target` is blocked by default in public repos from 2 Dec 2026 unless an event policy allows it."
+    stretch: Write a Python script that audits all repos in an org for workflows without explicit `permissions:` and reports them as CSV.
+
+  # ---------------------------------------------------------------- Day 7
+  - key: d7-mock-exam
+    topic: day-7
+    difficulty: intermediate
+    type: quiz
+    title: "[Review] Intermediate: Take a timed 35-question mock exam and log every miss"
+    objective: Measure readiness per domain and fix weak areas.
+    scenario: >-
+      You have 50 minutes for the 35 practice questions in Day 7 (half the real exam time for a third of the questions).
+    tasks:
+      - "Answer all 35 questions without notes; record answers in `solutions/day-7/<issue>/answers.md`."
+      - Score yourself per domain (use the blueprint table).
+      - For every miss, link the lesson section and write the rule in one sentence.
+      - Re-take the missed questions after 24 hours.
+    constraints:
+      - No docs or search during the timed attempt.
+    acceptance:
+      - Score ≥ 80% overall and ≥ 70% in each domain on the re-take.
+      - Miss log committed.
+    hints:
+      - Read each YAML snippet literally; many items hide one invalid key.
+      - "Watch for words like \"most secure\" and \"without storing credentials\"."
+    stretch: Write 10 new questions on topics you missed and add them to Day 7 via PR.
+
+  - key: d7-capstone
+    topic: day-7
+    difficulty: advanced
+    type: build
+    title: "[Capstone] Advanced: Build an end-to-end CI/CD pipeline that uses every domain"
+    objective: Combine triggers, matrix, cache, reusable workflow, custom action, environments, OIDC-style auth, attestation and summaries.
+    scenario: >-
+      Ship a small Python CLI from PR to a (simulated) production release with full controls.
+    tasks:
+      - "PR workflow: lint + test matrix (3.12/3.13 × ubuntu/windows), cache, path filters, `cancel-in-progress`."
+      - "Main workflow: calls a reusable build workflow, attests the wheel, uploads it, deploys to `staging` then `production` (reviewer + `queue: max`)."
+      - Use your composite action from the Day 5 issue for test setup.
+      - "Every action pinned to SHA; workflow-level `permissions: {}`."
+      - Write a job summary with test counts, coverage and the attestation URL.
+    constraints:
+      - "All in `.github/workflows/practice-capstone-*.yml` and `solutions/day-7/<issue>/`."
+    acceptance:
+      - One PR run and one main run, both green, linked in a comment.
+      - A Mermaid diagram of the pipeline in the solution README.
+      - "`actionlint` passes."
+    hints:
+      - Put the environment job inside the reusable workflow if it needs environment secrets.
+      - "Use `${{ !cancelled() }}` for the summary job."
+    stretch: Add a `workflow_run` workflow that posts the deploy result to an issue, with least-privilege permissions.
+
+  - key: d7-cheatsheet
+    topic: day-7
+    difficulty: beginner
+    type: quiz
+    title: "[Review] Beginner: Write a one-page personal cheat sheet of limits and defaults"
+    objective: Memorise the numbers and defaults the exam tests.
+    scenario: >-
+      The night before the exam, you want one page with every limit, default and "trap".
+    tasks:
+      - "Create `solutions/day-7/<issue>/CHEATSHEET.md` with tables: limits (timeouts, matrix, retention, cache, reusable limits, secrets sizes), defaults (`fail-fast`, PR types, shells, token), and 15 traps."
+      - Check each number against the official docs and add a link.
+      - Make 20 flashcards (question / answer) from the sheet.
+    constraints:
+      - Max one printed page for the tables.
+    acceptance:
+      - Every number has a source link.
+      - 20 flashcards committed.
+    hints:
+      - Start from Day 3 "Defaults and limits" and Day 7 "Common traps".
+      - Some numbers differ between github.com and GHES.
+    stretch: Turn the flashcards into a small Python quiz script that asks 10 random cards.

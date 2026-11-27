@@ -4,7 +4,7 @@
 
 1. Triggers: `workflow_dispatch` (UI/API, typed inputs), `workflow_call` (reusable), `workflow_run`, `repository_dispatch`, and `schedule` (UTC, default branch only).
 2. Data flow: step output via `$GITHUB_OUTPUT`, env persistence via `$GITHUB_ENV`, job output exposed under `jobs.<id>.outputs` and read with `needs.<id>.outputs.<key>`.
-3. Control flow: `needs`, `if: always()/failure()/cancelled()`, matrix with `include`/`exclude`/`fail-fast`/`max-parallel`, dynamic matrix with `fromJSON()`.
+3. Control flow: `needs`, `if: always()/!cancelled()/failure()/cancelled()`, matrix with `include`/`exclude`/`fail-fast`/`max-parallel`, dynamic matrix with `fromJSON()`.
 4. Sharing and speed: artifacts move files between jobs; `actions/cache` (`key`, `restore-keys`) speeds dependencies; `services:` provides databases for tests.
 5. Reuse: reusable workflows are called at job level (`uses:` plus `secrets: inherit`); composite actions are called as steps and every `run` needs `shell:`.
 6. Action types: JavaScript, Docker (Linux runners only), and composite; metadata always lives in `action.yml`.

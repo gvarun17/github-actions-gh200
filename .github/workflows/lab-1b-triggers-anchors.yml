@@ -1,0 +1,63 @@
+name: Lab 1b - Triggers, Inputs, Anchors
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Target stage
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+      dry-run:
+        type: boolean
+        default: true
+      replicas:
+        type: number
+        default: 2
+
+permissions:
+  contents: read
+
+jobs:
+  show-inputs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env: &common_env
+      APP: gh200-demo
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - &checkout
+        uses: actions/checkout@v7
+      - name: Typed inputs vs event inputs
+        env:
+          TARGET: ${{ inputs.target }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          RAW_DRY_RUN: ${{ github.event.inputs.dry-run }}
+          REPLICAS: ${{ inputs.replicas }}
+        run: |
+          echo "target=$TARGET replicas=$REPLICAS"
+          echo "inputs.dry-run=$DRY_RUN (boolean)  github.event.inputs.dry-run=$RAW_DRY_RUN (string)"
+      - name: Annotations and groups
+        run: |
+          echo "::group::Environment for $APP"
+          env | grep -E '^(APP|PYTHONUNBUFFERED|GITHUB_EVENT_NAME)=' | sort
+          echo "::endgroup::"
+          echo "::notice title=Lab 1b::Inputs read for $APP"
+      - name: Multi-line value through GITHUB_ENV
+        run: |
+          {
+            echo "NOTES<<EOF"
+            echo "line one"
+            echo "line two"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+      - name: Read the multi-line value
+        run: printf '%s\n' "$NOTES"
+
+  reuse-anchor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env: *common_env          # alias copies the whole env mapping
+    steps:
+      - *checkout             # alias copies the whole step
+      - run: echo "APP=$APP came from an alias"

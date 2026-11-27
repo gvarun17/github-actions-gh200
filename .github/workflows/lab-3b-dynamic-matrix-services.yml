@@ -1,0 +1,117 @@
+name: Lab 3b - Dynamic Matrix, Cache, Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run the full OS matrix
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        env:
+          FULL: ${{ inputs.full }}
+        run: |
+          if [ "$FULL" = "true" ]; then
+            m='{"os":["ubuntu-latest"],"py":["3.12","3.13"],"include":[{"os":"windows-latest","py":"3.13"}]}'
+          else
+            m='{"os":["ubuntu-latest"],"py":["3.12","3.13"]}'
+          fi
+          echo "matrix=$m" >> "$GITHUB_OUTPUT"
+          echo "### Matrix" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo "$m" | python3 -m json.tool >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.py }}
+      - name: Manual cache with explicit key
+        id: cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/lab3b
+          key: lab3b-${{ runner.os }}-${{ matrix.py }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            lab3b-${{ runner.os }}-${{ matrix.py }}-
+      - name: Fill cache only on a miss
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: mkdir -p ~/.cache/lab3b && date -u > ~/.cache/lab3b/created.txt
+      - name: Report cache state
+        shell: bash
+        run: |
+          echo "cache-hit=${{ steps.cache.outputs.cache-hit }}"
+          cat ~/.cache/lab3b/created.txt
+      - name: Per-leg result file
+        shell: bash
+        run: |
+          mkdir -p result
+          echo "${{ matrix.os }} ${{ matrix.py }} ok" > "result/${{ matrix.os }}-${{ matrix.py }}.txt"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: result-${{ matrix.os }}-${{ matrix.py }}
+          path: result/
+          retention-days: 1
+
+  db-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container: python:3.13-slim
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: pw
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Connect by service label (job runs in a container)
+        env:
+          PGPASSWORD: pw
+        run: |
+          apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null
+          psql -h postgres -U postgres -c "select version();"
+
+  report:
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: result-*
+          merge-multiple: true
+          path: all
+      - name: Summary
+        run: |
+          echo "build result: ${{ needs.build.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '| leg | status |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---|' >> "$GITHUB_STEP_SUMMARY"
+          for f in all/*.txt; do
+            read -r os py st < "$f"
+            echo "| $os / $py | $st |" >> "$GITHUB_STEP_SUMMARY"
+          done

@@ -1,0 +1,23 @@
+name: Greet (JavaScript)
+description: Example JavaScript action for Day 5 (Node 24)
+inputs:
+  who:
+    description: Who to greet
+    required: true
+    default: World
+  shout:
+    description: Upper-case the greeting
+    required: false
+    default: 'false'
+outputs:
+  time:
+    description: UTC time of the greeting
+  greeting:
+    description: The greeting text
+runs:
+  using: node24
+  main: dist/index.js
+  post: dist/post.js
+branding:
+  icon: message-circle
+  color: green
